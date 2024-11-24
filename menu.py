@@ -151,26 +151,32 @@ def menu_clientes():
         else:
             print("Opção inválida! Tente novamente.")
 
-def alterar_dado(campo, nome_campo, valor_atual, cliente_nome=None, validar_funcao=None, formato=None):
+def alterar_dado(campo, nome_campo, valor_atual, cliente_nome=None, agencia_nome=None, validar_funcao=None, formato=None):
     # Mensagem de confirmação de alteração
     if cliente_nome:
         alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual} de {cliente_nome}? (s/n): ").strip().lower()
+    elif agencia_nome:
+        # Exibe o valor atual de cada campo de agência para confirmar a alteração
+        alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual} da agência {agencia_nome}? (s/n): ").strip().lower()
     else:
         alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual}? (s/n): ").strip().lower()
-    
+
     # Se a resposta for "sim", pede o novo valor
     if alterar == "s":
         while True:
             novo_valor = input(f"Novo {nome_campo} para {valor_atual}: ")
+            
+            # Validação do novo valor, se houver função de validação
             if validar_funcao:
-                # Valida o novo valor, se necessário
-                if validar_funcao(novo_valor):
+                if validar_funcao(novo_valor):  # Se a validação for bem-sucedida
                     return novo_valor
                 else:
                     print(f"{nome_campo.capitalize()} inválido! Tente novamente.")
             else:
                 return novo_valor
+    # Caso não altere o valor, retorna o valor atual
     return valor_atual
+
 
 # Consulta de Clientes
 def menu_consultar_clientes():
@@ -353,38 +359,73 @@ def menu_inserir_agencia():
     input("\nPressione Enter para continuar...")
 
 
-# Alteração de Agência
 def menu_alterar_agencia():
+    menu_consultar_agencias()
+    # Solicita o código da agência a ser alterada
     agencia_codigo = input("Código da Agência a ser alterada: ")
-    agencia = next((ag for ag in agencias if ag.codigo == agencia_codigo), None)
+    
+    # Encontra a agência correspondente
+    agencia = next((ag for ag in agencias if ag.id_agencia == agencia_codigo), None)
     
     if agencia:
-        novo_nome = input(f"Novo nome para a agência {agencia.nome}: ")
-        novo_endereco = input(f"Novo endereço para a agência {agencia.endereco}: ")
-        agencia.nome = novo_nome
-        agencia.endereco = novo_endereco
-        salvar_dados("agencias.txt", [agencia.to_dict() for agencia in agencias])
-        print("Agência alterada com sucesso!")
+        # Alteração do nome
+        agencia.nome = alterar_dado("nome", "nome", agencia.nome)
+        
+        # Alteração do endereço
+        agencia.endereco = alterar_dado("endereço", "endereço", agencia.endereco, agencia.nome)
+        
+        # Alteração do CNPJ (validação opcional)
+        agencia.cnpj = alterar_dado("CNPJ", "CNPJ", agencia.cnpj, agencia.nome, validar_cnpj)
+        
+        # Alteração do telefone (validação opcional)
+        agencia.telefone = alterar_dado("telefone", "telefone", agencia.telefone, agencia.nome, validar_telefone)
+        
+        # Salva os dados após a alteração
+        salvar_dados("agencias.txt", agencias, sobrescrever=True)
+        print(f"Dados da agência {agencia.nome} alterados com sucesso!")
     else:
         print("Agência não encontrada!")
+
+    input("\nPressione Enter para continuar...")
+
 
 # Consulta de Agências
 def menu_consultar_agencias():
     print("\nLista de Agências Cadastradas:")
-    for agencia in agencias:
-        print(f"Código: {agencia.codigo} | Nome: {agencia.nome} | Endereço: {agencia.endereco}")
-
-# Remoção de Agência
-def menu_remover_agencia():
-    agencia_codigo = input("Código da Agência a ser removida: ")
-    agencia = next((ag for ag in agencias if ag.codigo == agencia_codigo), None)
-    
-    if agencia:
-        agencias.remove(agencia)
-        salvar_dados("agencias.txt", [agencia.to_dict() for agencia in agencias])
-        print(f"Agência {agencia.nome} removida com sucesso!")
+    if agencias:
+        for agencia in agencias:
+            # Exibe os dados de forma alinhada
+            print(f"Código: {agencia.id_agencia} | Nome: {agencia.nome:<20} | Endereço: {agencia.endereco}")
     else:
-        print("Agência não encontrada!")
+        print("Nenhuma agência cadastrada.")
+    
+    input("\nPressione Enter para continuar...")  # Pausa até pressionar Enter
+
+
+# Remoção de Agência - Refatorada para simplificar
+def menu_remover_agencia():
+    while True:
+        menu_consultar_agencias()
+
+        if not agencias:  # Verifica se há agências na lista
+            print("Não há agências cadastradas. Retornando ao menu...")
+            break  # Sai do loop se não houver agências
+
+        while True:  # Loop para solicitar o código da agência até a agência ser encontrada
+            agencia_codigo = input("\nCódigo da Agência a ser removida: ")
+            agencia = next((ag for ag in agencias if ag.id_agencia == agencia_codigo), None)
+            
+            if agencia:
+                agencias.remove(agencia)  # Remove a agência
+                salvar_dados("agencias.txt", [agencia.to_dict() for agencia in agencias])  # Atualiza os dados
+                print(f"Agência {agencia.nome} removida com sucesso!")
+                break  # Sai do loop interno após a remoção
+            else:
+                print("Agência não encontrada! Tente novamente.")  # Solicita novo código
+
+        break  # Sai do loop principal após a remoção
+
+    input("\nPressione Enter para continuar...")  # Pausa até pressionar Enter
 
 # Menu de Contas (Cadastro, Saldo e Extrato)
 def menu_contas():
