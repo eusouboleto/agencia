@@ -1,0 +1,2 @@
+id_cliente: 2 | nome: Sandra Bullock | cpf: 123.555.999-21 | telefone: (15) 2121-2222 | endereco: Rua UNIP, 1 | data_nascimento: 02/02/2002
+id_cliente: 4 | nome: Gumayushi | cpf: 999.999.999-11 | telefone: (15) 98741-3130 | endereco: Rua SKT, 11 | data_nascimento: 01/01/2024

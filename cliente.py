@@ -1,46 +1,63 @@
 class Cliente:
-    def __init__(self, id_cliente, nome, cpf):
+    def __init__(self, id_cliente, nome, cpf, telefone=None, endereco=None, data_nascimento=None):
         self.id_cliente = id_cliente
         self.nome = nome
         self.cpf = cpf
+        self.telefone = telefone
+        self.endereco = endereco
+        self.data_nascimento = data_nascimento
 
     def to_dict(self):
         return {
             "id_cliente": self.id_cliente,
             "nome": self.nome,
-            "cpf": self.cpf
+            "cpf": self.cpf,
+            "telefone": self.telefone,
+            "endereco": self.endereco,
+            "data_nascimento": self.data_nascimento
         }
+
+    def to_string(self):
+        # Método para converter o cliente em string no formato adequado para salvar no .txt
+        return f"id_cliente: {self.id_cliente} | nome: {self.nome} | cpf: {self.cpf} | telefone: {self.telefone} | endereco: {self.endereco} | data_nascimento: {self.data_nascimento}"
 
     @staticmethod
     def from_dict(data):
-        # Se os dados estiverem em formato de dicionário
+        # Verifica se os dados estão em formato de dicionário
         if isinstance(data, dict):
-            return Cliente(data.get("id_cliente", ""), data.get("nome", ""), data.get("cpf", ""))
+            return Cliente(
+                data.get("id_cliente", ""),
+                data.get("nome", ""),
+                data.get("cpf", ""),
+                data.get("telefone", None),
+                data.get("endereco", None),
+                data.get("data_nascimento", None)
+            )
         
-        # Se `data` for uma string, tenta dividi-la no formato esperado
+        # Caso os dados sejam uma string com formato específico
         try:
-            # Verifica se a string está no formato correto (ID_Cliente: x | Nome_Cliente: y | CPF: z)
             if " | " in data:
-                dados = data.split(" | ")  # Divide a string em partes
-                if len(dados) != 3:
+                dados = data.split(" | ")
+                if len(dados) != 6:
                     print("Formato inválido, dados incompletos:", data)
-                    return None  # Retorna None se a string não tiver 3 partes
+                    return None
 
                 id_cliente = dados[0].split(":")[1].strip()
                 nome = dados[1].split(":")[1].strip()
                 cpf = dados[2].split(":")[1].strip()
+                telefone = dados[3].split(":")[1].strip()
+                endereco = dados[4].split(":")[1].strip()
+                data_nascimento = dados[5].split(":")[1].strip()
 
-                return Cliente(id_cliente, nome, cpf)
+                return Cliente(id_cliente, nome, cpf, telefone, endereco, data_nascimento)
             else:
                 print("Formato inválido para dados de cliente:", data)
                 return None
-        
-        except IndexError:
-            print("Erro no formato da string, campos ausentes:", data)
-            return None
-        except ValueError as e:
-            print(f"Valor inválido nos dados: {data}. Erro: {e}")
-            return None
         except Exception as e:
-            print(f"Erro inesperado ao processar dados de cliente: {e}")
+            print(f"Erro ao processar dados de cliente: {e}")
             return None
+
+    @staticmethod
+    def from_string(data):
+        # Método para reconstruir um cliente a partir de uma string (para carregar do .txt)
+        return Cliente.from_dict(data)

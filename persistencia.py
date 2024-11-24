@@ -1,22 +1,52 @@
 import os
+from cliente import Cliente
+from agencia import Agencia
+from conta import ContaCorrente
+from movimento import Movimento
 
-# Função para carregar os dados dos arquivos
-def carregar_dados(nome_arquivo):
-    if not os.path.exists(nome_arquivo):
-        return []  # Retorna uma lista vazia se o arquivo não existir
-    with open(nome_arquivo, "r") as arquivo:
-        dados = arquivo.readlines()
-        return [linha.strip() for linha in dados]  # Remove quebras de linha
+# Função para carregar dados de arquivos, usando tipo_item para determinar a classe a ser instanciada
+def carregar_dados(nome_arquivo, tipo_item):
+    lista = []
+    if os.path.exists(nome_arquivo):  # Verifica se o arquivo existe
+        with open(nome_arquivo, "r") as arquivo:
+            dados = arquivo.readlines()
+            for linha in dados:
+                linha = linha.strip()  # Remove quebras de linha e espaços extras
+                partes = linha.split(" | ")
+                try:
+                    # Verifica o tipo de item e chama o método estático apropriado para reconstrução
+                    if tipo_item == Cliente:
+                        item = Cliente.from_string(linha)
+                    elif tipo_item == Agencia:
+                        item = Agencia.from_string(linha)
+                    elif tipo_item == ContaCorrente:
+                        item = ContaCorrente.from_string(linha)
+                    elif tipo_item == Movimento:
+                        item = Movimento.from_string(linha)
+                    else:
+                        print(f"Tipo desconhecido: {tipo_item}")
+                        continue
+                    
+                    lista.append(item)
+                except Exception as e:
+                    print(f"Erro ao carregar a linha: '{linha}'. Erro: {e}")
+    return lista
 
-def salvar_dados(nome_arquivo, dados):
-    with open(nome_arquivo, "w") as arquivo:  # Sobrescreve o arquivo a cada vez
-        for dado in dados:
-            if "id_cliente" in dado:
-                # Salva dados de Cliente
-                arquivo.write(f"ID_Cliente: {dado['id_cliente']} |  Nome_Cliente: {dado['nome']} | CPF: {dado['cpf']}\n")
-            elif "codigo" in dado:
-                # Salva dados de Agencia
-                arquivo.write(f"ID_Agência: {dado['codigo']} | Nome_Agência: {dado['nome']} | Endereço:{dado['endereco']}\n")
-            elif "numero_conta" in dado:
-                # Salva dados de Conta
-                arquivo.write(f"Nº da Conta: {dado['numero_conta']} | ID_Cliente: {dado['cliente_id']} | ID_Agência: {dado['agencia_id']} | Saldo da conta: {dado['saldo']}\n")
+# Função para salvar dados em arquivos, verificando o tipo do objeto e formatando adequadamente
+def salvar_dados(nome_arquivo, dados, sobrescrever=False):
+    modo = "w" if sobrescrever else "a"  # Usando "w" para sobrescrever ou "a" para adicionar
+    try:
+        with open(nome_arquivo, modo) as arquivo:
+            for dado in dados:
+                if isinstance(dado, Cliente):
+                    arquivo.write(dado.to_string() + "\n")
+                elif isinstance(dado, Agencia):
+                    arquivo.write(dado.to_string() + "\n")
+                elif isinstance(dado, ContaCorrente):
+                    arquivo.write(dado.to_string() + "\n")
+                elif isinstance(dado, Movimento):
+                    arquivo.write(dado.to_string() + "\n")
+                else:
+                    print(f"Tipo desconhecido: {type(dado)}")
+    except Exception as e:
+        print(f"Erro ao abrir ou escrever no arquivo {nome_arquivo}: {e}")
