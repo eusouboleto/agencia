@@ -41,6 +41,20 @@ def validar_telefone(telefone):
     padrao = r"^\(\d{2}\)\s\d{4,5}-\d{4}$"
     return bool(re.match(padrao, telefone))
 
+def validar_cnpj(cnpj):
+    # Remove espaços em branco e qualquer pontuação do CNPJ
+    cnpj = re.sub(r'[^0-9]', '', cnpj)
+    
+    # Verifica se o CNPJ tem 14 dígitos
+    if len(cnpj) != 14:
+        return False
+    
+    # Verifica se o CNPJ não é composto por todos os mesmos dígitos (ex: 11111111111111)
+    if cnpj == cnpj[0] * 14:
+        return False
+    
+    return True
+
 # Função para validar o ID de cliente e agência
 def validar_cliente_agencia(cliente_id, agencia_id):
     cliente = next((cl for cl in clientes if cl.id_cliente == cliente_id), None)
@@ -66,7 +80,6 @@ def menu_principal():
         print("-" * 50)
 
         opcao = input("Escolha uma opção: ")
-        print("=" * 50)
 
         if opcao == "1":
             menu_clientes()
@@ -124,7 +137,6 @@ def menu_clientes():
         print("-" * 50)
 
         opcao = input("Escolha uma opção: ")
-        print("=" * 50)
 
         if opcao == "1":
             menu_inserir_cliente()
@@ -140,30 +152,24 @@ def menu_clientes():
             print("Opção inválida! Tente novamente.")
 
 def alterar_dado(campo, nome_campo, valor_atual, cliente_nome=None, validar_funcao=None, formato=None):
-    # Verifica se o campo sendo alterado é o nome ou outro campo
-    if nome_campo.lower() == "nome":
-        # Para o nome, não repete o nome duas vezes
-        alterar = input(f"Deseja alterar o {nome_campo} de {valor_atual}? (s/n): ").strip().lower()
+    # Mensagem de confirmação de alteração
+    if cliente_nome:
+        alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual} de {cliente_nome}? (s/n): ").strip().lower()
     else:
-        # Para os outros campos, a mensagem exibe o valor atual com o nome do cliente
-        if cliente_nome:
-            alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual} de {cliente_nome}? (s/n): ").strip().lower()
-        else:
-            alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual}? (s/n): ").strip().lower()
+        alterar = input(f"Deseja alterar o {nome_campo}: {valor_atual}? (s/n): ").strip().lower()
     
     # Se a resposta for "sim", pede o novo valor
     if alterar == "s":
         while True:
             novo_valor = input(f"Novo {nome_campo} para {valor_atual}: ")
-            # Se houver uma função de validação, ela será aplicada
             if validar_funcao:
-                if validar_funcao(novo_valor):  # Aplica a validação
+                # Valida o novo valor, se necessário
+                if validar_funcao(novo_valor):
                     return novo_valor
                 else:
-                    print(f"{nome_campo} inválido! Tente novamente.")
+                    print(f"{nome_campo.capitalize()} inválido! Tente novamente.")
             else:
                 return novo_valor
-    # Caso o usuário não queira alterar, retorna o valor atual
     return valor_atual
 
 # Consulta de Clientes
@@ -214,7 +220,6 @@ def menu_inserir_cliente():
     print(f"Cliente {nome} cadastrado com sucesso!")
     input("\nPressione Enter para continuar...")
 
-# Alteração de Cliente - Refatorado com função genérica
 def menu_alterar_cliente():
     menu_consultar_clientes()
     cliente_id = input("\nID do Cliente a ser alterado: ")
@@ -222,10 +227,10 @@ def menu_alterar_cliente():
     
     if cliente:
         cliente.nome = alterar_dado("nome", "nome", cliente.nome)
-        cliente.cpf = alterar_dado("CPF", "CPF", cliente.cpf, validar_cpf)
-        cliente.telefone = alterar_dado("telefone", "telefone", cliente.telefone, validar_telefone)
-        cliente.endereco = alterar_dado("endereço", "endereço", cliente.endereco)
-        cliente.data_nascimento = alterar_dado("data de nascimento", "data de nascimento", cliente.data_nascimento, validar_data)
+        cliente.cpf = alterar_dado("CPF", "CPF", cliente.cpf, cliente.nome, validar_cpf)
+        cliente.telefone = alterar_dado("telefone", "telefone", cliente.telefone, cliente.nome, validar_telefone)
+        cliente.endereco = alterar_dado("endereço", "endereço", cliente.endereco, cliente.nome)
+        cliente.data_nascimento = alterar_dado("data de nascimento", "data de nascimento", cliente.data_nascimento, cliente.nome, validar_data)
 
         salvar_dados("clientes.txt", clientes, sobrescrever=True)
         print(f"Dados do(a) cliente {cliente.nome} alterados com sucesso!")
@@ -275,18 +280,22 @@ def remover_cliente(cliente_id):
     else:
         print("Cliente não encontrado!")
 
-# Menu de Agências (Inserção, Alteração, Consulta, Remoção)
 def menu_agencias():
     while True:
-        print("\nMenu de Agências")
-        print("1. Inserção de Agência")
-        print("2. Alteração de Agência")
-        print("3. Consulta de Agência")
-        print("4. Remoção de Agência")
-        print("5. Voltar ao Menu Principal")
-        
-        opcao = input("Escolha uma opção: ")
-        
+        # Cabeçalho com borda de asteriscos e texto centralizado
+        print(f"\n{'Menu de Agências':^50}")
+        print("-" * 50)
+
+        print("1. Inserção de Agência".ljust(30), "======> Opção 1")
+        print("2. Alteração de Agência".ljust(30), "======> Opção 2")
+        print("3. Consulta de Agência".ljust(30), "======> Opção 3")
+        print("4. Remoção de Agência".ljust(30), "======> Opção 4")
+        print("5. Voltar ao Menu Principal".ljust(30), "======> Opção 5")
+
+        print("-" * 50)
+
+        opcao = input("Escolha uma opção: ").strip()
+
         if opcao == "1":
             menu_inserir_agencia()
         elif opcao == "2":
@@ -296,18 +305,53 @@ def menu_agencias():
         elif opcao == "4":
             menu_remover_agencia()
         elif opcao == "5":
+            print("Retornando ao Menu Principal...")
             break
         else:
             print("Opção inválida! Tente novamente.")
 
 # Inserção de Agência
 def menu_inserir_agencia():
-    nome = input("Nome da agência: ")
-    endereco = input("Endereço da agência: ")
-    agencia = Agencia(nome, endereco)
-    agencias.append(agencia)
-    salvar_dados("agencias.txt", [agencia.to_dict() for agencia in agencias])
-    print(f"Agência {nome} cadastrada com sucesso!")
+    print(f"\n{'Inserir Nova Agência':^50}")
+    print("-" * 50)
+
+    nome = input("Nome da agência: ").strip()
+    endereco = input("Endereço da agência: ").strip()
+
+    # Validação de CNPJ
+    while True:
+        cnpj = input("CNPJ da agência (formato: XX.XXX.XXX/XXXX-XX): ").strip()
+        if validar_cnpj(cnpj):
+            # Verifica se o CNPJ já existe
+            if any(agencia.cnpj == cnpj for agencia in agencias):
+                print("Erro: Já existe uma agência cadastrada com este CNPJ!")
+            else:
+                break
+        else:
+            print("CNPJ inválido! Tente novamente.")
+
+    # Validação de telefone
+    while True:
+        telefone = input("Telefone da agência (formato: TEL (XX) XXXX-XXXX): ").strip()
+        if validar_telefone(telefone):
+            break
+        else:
+            print("Telefone inválido! Tente novamente.")
+
+    # Criação e salvamento da nova agência
+    try:
+        # Gerando o ID da agência baseado no tamanho da lista
+        id_agencia = len(agencias) + 1
+        nova_agencia = Agencia(id_agencia, nome, endereco, cnpj, telefone)
+        agencias.append(nova_agencia)
+        
+        salvar_dados("agencias.txt", agencias, sobrescrever=True)
+        print(f"Agência '{nome}' cadastrada com sucesso!")
+    except Exception as e:
+        print(f"Erro ao cadastrar agência: {e}")
+
+    input("\nPressione Enter para continuar...")
+
 
 # Alteração de Agência
 def menu_alterar_agencia():
