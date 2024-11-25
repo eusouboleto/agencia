@@ -1,6 +1,7 @@
 class Cliente:
     def __init__(self, id_cliente, nome, cpf, telefone=None, endereco=None, data_nascimento=None):
-        self.id_cliente = id_cliente
+        # Garantir que o id_cliente seja sempre inteiro
+        self.id_cliente = int(id_cliente) if id_cliente else None
         self.nome = nome
         self.cpf = cpf
         self.telefone = telefone
@@ -18,15 +19,19 @@ class Cliente:
         }
 
     def to_string(self):
-        # Método para converter o cliente em string no formato adequado para salvar no .txt
+        # Converte o cliente em string no formato adequado para salvar no .txt
         return f"id_cliente: {self.id_cliente} | nome: {self.nome} | cpf: {self.cpf} | telefone: {self.telefone} | endereco: {self.endereco} | data_nascimento: {self.data_nascimento}"
+
+    def __str__(self):
+        # Converte o cliente em string para exibição direta no console
+        return f"{self.nome} (ID: {self.id_cliente})"
 
     @staticmethod
     def from_dict(data):
         # Verifica se os dados estão em formato de dicionário
         if isinstance(data, dict):
             return Cliente(
-                data.get("id_cliente", ""),
+                data.get("id_cliente", 0),  # Garantir que id_cliente seja um inteiro
                 data.get("nome", ""),
                 data.get("cpf", ""),
                 data.get("telefone", None),
@@ -42,7 +47,7 @@ class Cliente:
                     print("Formato inválido, dados incompletos:", data)
                     return None
 
-                id_cliente = dados[0].split(":")[1].strip()
+                id_cliente = int(dados[0].split(":")[1].strip())  # Garantir que id_cliente seja inteiro
                 nome = dados[1].split(":")[1].strip()
                 cpf = dados[2].split(":")[1].strip()
                 telefone = dados[3].split(":")[1].strip()

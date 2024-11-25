@@ -1,7 +1,7 @@
 from cliente import Cliente
 from agencia import Agencia
 from conta import ContaCorrente
-from persistencia import salvar_dados, carregar_dados
+from persistencia import salvar_dados, carregar_dados, proximo_id_disponivel, remover_por_id
 from movimento import Movimento
 import os
 import re
@@ -94,6 +94,56 @@ def menu_principal():
             break
         else:
             print("Opção inválida! Tente novamente.")
+
+def menu_remover(tipo_item, nome_arquivo):
+    """
+    Menu genérico para remover um objeto (Cliente, Agência, etc.) de um arquivo.
+    Args:
+        tipo_item (class): Classe do objeto (ex: Cliente, Agencia).
+        nome_arquivo (str): Nome do arquivo onde os dados estão armazenados (ex: "clientes.txt").
+    """
+    while True:
+        # Verifica se o arquivo existe antes de tentar carregar os dados
+        if not verificar_arquivo(nome_arquivo):
+            print(f"O arquivo {nome_arquivo} não existe. Retornando ao menu...")
+            break  # Sai do loop se o arquivo não existir
+
+        # Exibe os itens cadastrados
+        print(f"\nLista de {tipo_item.__name__}s Cadastrados:")
+        itens = carregar_dados(nome_arquivo, tipo_item)
+        
+        if not itens:
+            print(f"Não há {tipo_item.__name__}s cadastrados. Retornando ao menu...")
+            break  # Sai do loop se não houver itens
+
+        for item in itens:
+            print(item.to_string())
+
+        while True:
+            try:
+                id_item = int(input(f"\nID do {tipo_item.__name__} a ser removido: "))
+                remover_por_id(nome_arquivo, tipo_item, id_item)
+                break  # Sai do loop interno após a remoção
+            except ValueError:
+                print("ID inválido! Tente novamente.")  # Solicita novo ID
+
+        break  # Sai do loop principal após a remoção
+
+    input("\nPressione Enter para continuar...")  # Pausa até pressionar Enter
+
+def verificar_arquivo(nome_arquivo):
+    """
+    Verifica se um arquivo existe.
+    Args:
+        nome_arquivo (str): Nome do arquivo a ser verificado.
+    Returns:
+        bool: True se o arquivo existir, False caso contrário.
+    """
+    try:
+        with open(nome_arquivo, 'r'):
+            return True
+    except FileNotFoundError:
+        return False
 
 # Função genérica para cadastrar qualquer item
 def cadastrar_item(nome_item, tipo_item, lista_items, arquivo):
@@ -217,9 +267,11 @@ def menu_inserir_cliente():
             break  # Sai do loop se a data for válida
         else:
             print("Data de nascimento inválida! Formato esperado: dd/mm/aaaa")
+        
+    id_cliente = proximo_id_disponivel("clientes.txt", Cliente)
     
     # Cria um novo cliente
-    cliente = Cliente(str(len(clientes) + 1), nome, cpf, telefone, endereco, data_nascimento)
+    cliente = Cliente(id_cliente, nome, cpf, telefone, endereco, data_nascimento)
     clientes.append(cliente)
     
     salvar_dados("clientes.txt", clientes, sobrescrever=True)
@@ -228,16 +280,22 @@ def menu_inserir_cliente():
 
 def menu_alterar_cliente():
     menu_consultar_clientes()
+
+    # Solicita o ID do cliente a ser alterado
     cliente_id = input("\nID do Cliente a ser alterado: ")
-    cliente = next((c for c in clientes if c.id_cliente == cliente_id), None)
+    
+    # Localiza o cliente a partir do ID
+    cliente = next((c for c in clientes if str(c.id_cliente) == str(cliente_id)), None)
     
     if cliente:
+        # Alteração dos dados do cliente
         cliente.nome = alterar_dado("nome", "nome", cliente.nome)
         cliente.cpf = alterar_dado("CPF", "CPF", cliente.cpf, cliente.nome, validar_cpf)
         cliente.telefone = alterar_dado("telefone", "telefone", cliente.telefone, cliente.nome, validar_telefone)
         cliente.endereco = alterar_dado("endereço", "endereço", cliente.endereco, cliente.nome)
         cliente.data_nascimento = alterar_dado("data de nascimento", "data de nascimento", cliente.data_nascimento, cliente.nome, validar_data)
 
+        # Salva os dados do cliente após a alteração
         salvar_dados("clientes.txt", clientes, sobrescrever=True)
         print(f"Dados do(a) cliente {cliente.nome} alterados com sucesso!")
     else:
@@ -245,42 +303,63 @@ def menu_alterar_cliente():
 
     input("\nPressione Enter para continuar...")
 
-# Remoção de Cliente - Refatorada para simplificar
 def menu_remover_cliente():
-    while True:
-        menu_consultar_clientes()
-        
-        if not clientes:  # Verifica se há clientes na lista
-            print("Não há clientes cadastrados. Retornando ao menu...")
-            break  # Sai do loop se não houver clientes
+    # Exibe a lista de clientes cadastrados
+    menu_consultar_clientes()
 
-        while True:  # Loop para solicitar o ID até o cliente ser encontrado
-            cliente_id = input("\nID do Cliente a ser removido: ")
-            cliente = next((c for c in clientes if c.id_cliente == cliente_id), None)
-            
-            if cliente:
-                remover_cliente(cliente_id)  # Passa apenas o cliente_id
-                break  # Sai do loop interno após a remoção
-            else:
-                print("Cliente não encontrado! Tente novamente.")  # Solicita novo ID
+    # Solicita o ID do cliente a ser removido
+    cliente_id = input("\nID do Cliente a ser removido: ").strip()
 
-        break  # Sai do loop principal após a remoção
+    # Tenta converter o ID para inteiro (caso seja um número)
+    try:
+        cliente_id = int(cliente_id)
+    except ValueError:
+        print(f"O ID fornecido ({cliente_id}) não é válido. Por favor, insira um número inteiro.")
+        return
 
-    input("\nPressione Enter para continuar...")  # Pausa até pressionar Enter
-
-# Função para remover o cliente com o cliente_id
-def remover_cliente(cliente_id):
-    cliente_a_remover = next((cl for cl in clientes if cl.id_cliente == cliente_id), None)
+    # Encontra o cliente correspondente
+    cliente = next((c for c in clientes if c.id_cliente == cliente_id), None)
     
+    if cliente:
+        # Exibe os detalhes do cliente para confirmação
+        print(f"\nVocê quer realmente remover o(a) Cliente: {cliente.nome} (ID: {cliente.id_cliente})?")
+        print(cliente.to_string())  # Mostra o cliente com todos os dados
+
+        # Confirma a remoção do cliente
+        remover = input("(s/n): ").strip().lower()
+        
+        if remover == "s":
+            # Remove o cliente da lista
+            clientes.remove(cliente)
+            # Salva os dados atualizados no arquivo
+            salvar_dados("clientes.txt", clientes, sobrescrever=True)
+            print("Cliente removido com sucesso.")
+        else:
+            print("Remoção cancelada.")
+    else:
+        print(f"Cliente com ID {cliente_id} não encontrado!")
+    
+    input("\nPressione Enter para continuar...")
+
+
+def remover_cliente(cliente_id):
+    # Carrega os dados do arquivo para garantir que estão atualizados
+    clientes = carregar_dados("clientes.txt", Cliente)
+
+    # Localiza o cliente pelo ID
+    cliente_a_remover = next((cl for cl in clientes if cl.id_cliente == cliente_id), None)
+
     if cliente_a_remover:
+        # Confirmação antes de remover
         certeza_remover = input(f"Você quer realmente remover o(a) cliente: {cliente_a_remover.nome} (s/n): ").strip().lower()
 
         if certeza_remover == "s":
+            # Remove o cliente da lista
             clientes.remove(cliente_a_remover)
             print(f"Cliente {cliente_a_remover.nome} removido com sucesso.")
 
-            # Chama salvar_dados passando o parâmetro sobrescrever=True
-            salvar_dados("clientes.txt", clientes, sobrescrever=True)  # Atualiza os dados no arquivo com sobrescrição
+            # Salva os dados atualizados no arquivo
+            salvar_dados("clientes.txt", clientes, sobrescrever=True)
         else:
             print("Remoção cancelada.")
     else:
@@ -346,8 +425,7 @@ def menu_inserir_agencia():
 
     # Criação e salvamento da nova agência
     try:
-        # Gerando o ID da agência baseado no tamanho da lista
-        id_agencia = len(agencias) + 1
+        id_agencia = proximo_id_disponivel("agencias.txt", Agencia)
         nova_agencia = Agencia(id_agencia, nome, endereco, cnpj, telefone)
         agencias.append(nova_agencia)
         
@@ -361,26 +439,21 @@ def menu_inserir_agencia():
 
 def menu_alterar_agencia():
     menu_consultar_agencias()
+
     # Solicita o código da agência a ser alterada
-    agencia_codigo = input("Código da Agência a ser alterada: ")
+    agencia_codigo = input("\nCódigo da Agência a ser alterada: ")
     
-    # Encontra a agência correspondente
-    agencia = next((ag for ag in agencias if ag.id_agencia == agencia_codigo), None)
+    # Localiza a agência a partir do ID
+    agencia = next((ag for ag in agencias if str(ag.id_agencia) == str(agencia_codigo)), None)
     
     if agencia:
-        # Alteração do nome
+        # Alteração dos dados da agência
         agencia.nome = alterar_dado("nome", "nome", agencia.nome)
-        
-        # Alteração do endereço
         agencia.endereco = alterar_dado("endereço", "endereço", agencia.endereco, agencia.nome)
-        
-        # Alteração do CNPJ (validação opcional)
         agencia.cnpj = alterar_dado("CNPJ", "CNPJ", agencia.cnpj, agencia.nome, validar_cnpj)
-        
-        # Alteração do telefone (validação opcional)
         agencia.telefone = alterar_dado("telefone", "telefone", agencia.telefone, agencia.nome, validar_telefone)
         
-        # Salva os dados após a alteração
+        # Salva os dados da agência após a alteração
         salvar_dados("agencias.txt", agencias, sobrescrever=True)
         print(f"Dados da agência {agencia.nome} alterados com sucesso!")
     else:
@@ -402,30 +475,41 @@ def menu_consultar_agencias():
     input("\nPressione Enter para continuar...")  # Pausa até pressionar Enter
 
 
-# Remoção de Agência - Refatorada para simplificar
 def menu_remover_agencia():
-    while True:
-        menu_consultar_agencias()
+    menu_consultar_agencias()
 
-        if not agencias:  # Verifica se há agências na lista
-            print("Não há agências cadastradas. Retornando ao menu...")
-            break  # Sai do loop se não houver agências
-
-        while True:  # Loop para solicitar o código da agência até a agência ser encontrada
-            agencia_codigo = input("\nCódigo da Agência a ser removida: ")
-            agencia = next((ag for ag in agencias if ag.id_agencia == agencia_codigo), None)
-            
-            if agencia:
-                agencias.remove(agencia)  # Remove a agência
-                salvar_dados("agencias.txt", [agencia.to_dict() for agencia in agencias])  # Atualiza os dados
-                print(f"Agência {agencia.nome} removida com sucesso!")
-                break  # Sai do loop interno após a remoção
-            else:
-                print("Agência não encontrada! Tente novamente.")  # Solicita novo código
-
-        break  # Sai do loop principal após a remoção
-
-    input("\nPressione Enter para continuar...")  # Pausa até pressionar Enter
+    # Solicita o ID da agência a ser removido
+    agencia_id = input("\nID da Agência a ser removido: ")
+    
+    # Tenta converter o ID para inteiro (caso seja um número)
+    try:
+        agencia_id = int(agencia_id)
+    except ValueError:
+        print(f"O ID fornecido ({agencia_id}) não é válido. Por favor, insira um número inteiro.")
+        return
+    
+    # Encontra a agência correspondente
+    agencia = next((a for a in agencias if a.id_agencia == agencia_id), None)
+    
+    if agencia:
+        # Exibe as informações da agência e solicita a confirmação para remoção
+        print(f"Você quer realmente remover o(a) Agencia com ID {agencia_id}?")
+        print(agencia)  # Agora exibe as informações legíveis da agência
+        
+        remover = input("(s/n): ").strip().lower()
+        
+        if remover == "s":
+            # Remove a agência da lista
+            agencias.remove(agencia)
+            # Salva os dados atualizados no arquivo
+            salvar_dados("agencias.txt", agencias, sobrescrever=True)
+            print("Agência removida com sucesso.")
+        else:
+            print("Remoção cancelada.")
+    else:
+        print(f"Agência com ID {agencia_id} não encontrada!")
+    
+    input("\nPressione Enter para continuar...")
 
 # Menu de Contas (Cadastro, Saldo e Extrato)
 def menu_contas():

@@ -1,3 +1,4 @@
 id_agencia: 1 | nome: JURANDIR | endereco: Rua Treze, 233 | cnpj: 12.123.456/4567-12 | telefone: (15) 1234-4567
 id_agencia: 2 | nome: BRADESCO SUPER | endereco: Rua Brasil, 23 | cnpj: 12.444.444/4444-44 | telefone: (11) 3231-3030
 id_agencia: 3 | nome: CREDICARD | endereco: Rua da Penha, 33 | cnpj: 12.123.124/1256-78 | telefone: (15) 1515-1212
+id_agencia: 4 | nome: POIATO | endereco: Rua Poiato, 99 | cnpj: 12.123.123/1444-99 | telefone: (15) 1515-1515
