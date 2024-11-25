@@ -29,7 +29,6 @@ class Conta:
             print("Saldo insuficiente ou valor inválido.")
 
     def to_dict(self):
-        # Converte a conta em um dicionário, incluindo cliente e agência
         return {
             "numero": self.numero,
             "cliente": self.cliente.to_dict(),
@@ -38,19 +37,15 @@ class Conta:
         }
 
     def to_string(self):
-        # Converte a conta para string para salvar no .txt
-        return f"numero: {self.numero} | cliente: {self.cliente.to_string()} | agencia: {self.agencia.to_string()} | saldo: {self.saldo}"
+        return f"tipo: Conta | numero: {self.numero} | cliente: {self.cliente.to_string()} | agencia: {self.agencia.to_string()} | saldo: {self.saldo}"
 
     @staticmethod
     def from_dict(data):
         try:
-            # Extrair informações do dicionário
             numero = data.get("numero")
             cliente_data = data.get("cliente")
             agencia_data = data.get("agencia")
             saldo = data.get("saldo", 0)
-
-            # Recriar o objeto Conta a partir dos dados
             cliente = Cliente.from_dict(cliente_data)
             agencia = Agencia.from_dict(agencia_data)
             return Conta(numero, cliente, agencia, saldo)
@@ -60,24 +55,28 @@ class Conta:
 
     @staticmethod
     def from_string(data):
-        # Método para reconstruir uma conta a partir de uma string
-        # Exemplo de string: "numero: 123 | cliente: ... | agencia: ... | saldo: 1000"
         try:
             parts = data.split(" | ")
-            numero = int(parts[0].split(":")[1].strip())
-            cliente_str = parts[1].split(":")[1].strip()
-            agencia_str = parts[2].split(":")[1].strip()
-            saldo = float(parts[3].split(":")[1].strip())
+            tipo = parts[0].split(":")[1].strip()  # Identifica o tipo de conta
+            numero = int(parts[1].split(":")[1].strip())
+            cliente_str = parts[2].split(":")[1].strip()
+            agencia_str = parts[3].split(":")[1].strip()
+            saldo = float(parts[4].split(":")[1].strip())
 
             cliente = Cliente.from_string(cliente_str)
             agencia = Agencia.from_string(agencia_str)
-            return Conta(numero, cliente, agencia, saldo)
+
+            if tipo == "ContaCorrente":
+                return ContaCorrente(numero, cliente, agencia, saldo)
+            elif tipo == "ContaEspecial":
+                return ContaEspecial(numero, cliente, agencia, saldo)
+            else:
+                return Conta(numero, cliente, agencia, saldo)
+
         except Exception as e:
             print(f"Erro ao processar a string da conta: {e}")
             return None
 
-    def get_extrato(self):
-        return self.extrato
 
 class ContaCorrente(Conta):
     def __init__(self, numero, cliente, agencia, saldo_inicial=0, limite=0):
@@ -114,6 +113,10 @@ class ContaCorrente(Conta):
     def set_limite(self, limite):
         self.__limite = limite
 
+    def to_string(self):
+        return f"tipo: ContaCorrente | numero: {self.numero} | cliente: {self.cliente.to_string()} | agencia: {self.agencia.to_string()} | saldo: {self.saldo} | limite: {self.__limite}"
+
+
 class ContaEspecial(Conta):
     def __init__(self, numero, cliente, agencia, saldo_inicial=0, limite=0):
         super().__init__(numero, cliente, agencia, saldo_inicial)
@@ -130,3 +133,6 @@ class ContaEspecial(Conta):
         limite = data.get("limite", 0)
         conta.__limite = limite
         return conta
+
+    def to_string(self):
+        return f"tipo: ContaEspecial | numero: {self.numero} | cliente: {self.cliente.to_string()} | agencia: {self.agencia.to_string()} | saldo: {self.saldo} | limite: {self.__limite}"

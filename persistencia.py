@@ -1,10 +1,9 @@
 import os
 from cliente import Cliente
 from agencia import Agencia
-from conta import ContaCorrente
+from conta import Conta, ContaCorrente, ContaEspecial
 from movimento import Movimento
 
-# Função para carregar dados de arquivos, usando tipo_item para determinar a classe a ser instanciada
 def carregar_dados(nome_arquivo, tipo_item):
     lista = []
     if os.path.exists(nome_arquivo):  # Verifica se o arquivo existe
@@ -12,7 +11,6 @@ def carregar_dados(nome_arquivo, tipo_item):
             dados = arquivo.readlines()
             for linha in dados:
                 linha = linha.strip()  # Remove quebras de linha e espaços extras
-                partes = linha.split(" | ")
                 try:
                     # Verifica o tipo de item e chama o método estático apropriado para reconstrução
                     if tipo_item == Cliente:
@@ -20,7 +18,17 @@ def carregar_dados(nome_arquivo, tipo_item):
                     elif tipo_item == Agencia:
                         item = Agencia.from_string(linha)
                     elif tipo_item == ContaCorrente:
-                        item = ContaCorrente.from_string(linha)
+                        # A ContaCorrente possui limite, por isso pode ser identificada assim
+                        if "limite" in linha:
+                            item = ContaCorrente.from_string(linha)
+                        else:
+                            item = Conta.from_string(linha)  # Caso seja uma conta genérica
+                    elif tipo_item == ContaEspecial:
+                        # Verifica se é ContaEspecial, com base no campo limite
+                        if "limite" in linha:
+                            item = ContaEspecial.from_string(linha)
+                        else:
+                            item = Conta.from_string(linha)  # Caso seja uma conta genérica
                     elif tipo_item == Movimento:
                         item = Movimento.from_string(linha)
                     else:
@@ -32,7 +40,7 @@ def carregar_dados(nome_arquivo, tipo_item):
                     print(f"Erro ao carregar a linha: '{linha}'. Erro: {e}")
     return lista
 
-# Função para salvar dados em arquivos, verificando o tipo do objeto e formatando adequadamente
+
 def salvar_dados(nome_arquivo, dados, sobrescrever=False):
     modo = "w" if sobrescrever else "a"  # Usando "w" para sobrescrever ou "a" para adicionar
     try:
@@ -44,8 +52,13 @@ def salvar_dados(nome_arquivo, dados, sobrescrever=False):
                     arquivo.write(dado.to_string() + "\n")
                 elif isinstance(dado, ContaCorrente):
                     arquivo.write(dado.to_string() + "\n")
+                elif isinstance(dado, ContaEspecial):
+                    arquivo.write(dado.to_string() + "\n")
                 elif isinstance(dado, Movimento):
                     arquivo.write(dado.to_string() + "\n")
+                elif isinstance(dado, Conta):
+                    # Ignore o dado se for uma instância genérica de Conta
+                    print(f"Conta não deve ser salva diretamente. ID: {dado.numero}")
                 else:
                     print(f"Tipo desconhecido: {type(dado)}")
     except Exception as e:

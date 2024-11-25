@@ -1,6 +1,6 @@
 from cliente import Cliente
 from agencia import Agencia
-from conta import ContaCorrente
+from conta import Conta, ContaEspecial, ContaCorrente
 from persistencia import salvar_dados, carregar_dados, proximo_id_disponivel, remover_por_id
 from movimento import Movimento
 import os
@@ -20,8 +20,14 @@ verificar_arquivos()
 # Listas para armazenar clientes, agências, contas e movimentações
 clientes = carregar_dados("clientes.txt", Cliente)
 agencias = carregar_dados("agencias.txt", Agencia)
-contas = carregar_dados("contas.txt", ContaCorrente)
+
+# Carregar todas as contas e depois separá-las
+contas = carregar_dados("contas.txt", Conta)  # Carrega todas as contas
+contas_corrente = [conta for conta in contas if isinstance(conta, ContaCorrente)]  # Filtra as contas correntes
+contas_especial = [conta for conta in contas if isinstance(conta, ContaEspecial)]  # Filtra as contas especiais
+
 movimentos = carregar_dados("movimentos.txt", Movimento)
+
 
 # Função de validação de data
 def validar_data(data):
@@ -514,26 +520,190 @@ def menu_remover_agencia():
 # Menu de Contas (Cadastro, Saldo e Extrato)
 def menu_contas():
     while True:
-        print("\nMenu de Contas")
-        print("1. Cadastro de Contas")
-        print("2. Consulta de Saldo")
-        print("3. Consulta de Extrato")
-        print("4. Voltar ao Menu Principal")
-        
-        opcao = input("Escolha uma opção: ")
-        
+        # Cabeçalho com borda de asteriscos e texto centralizado
+        print(f"\n{'Menu de Contas':^50}")
+        print("-" * 50)
+
+        print("1. Cadastro de Conta".ljust(30), "======> Opção 1")
+        print("2. Consulta de Saldo".ljust(30), "======> Opção 2")
+        print("3. Consulta de Extrato".ljust(30), "======> Opção 3")
+        print("4. Voltar ao Menu Principal".ljust(30), "======> Opção 4")
+
+        print("-" * 50)
+
+        opcao = input("Escolha uma opção: ").strip()
+
         if opcao == "1":
             menu_inserir_conta()
         elif opcao == "2":
             menu_consultar_saldo()
         elif opcao == "3":
-            menu_consultar_extrato()
+            pass #menu_consultar_extrato()
         elif opcao == "4":
+            print("Retornando ao Menu Principal...")
             break
         else:
             print("Opção inválida! Tente novamente.")
 
-# (Adapte as funções de Cadastro de Contas, Consulta de Saldo e Extrato conforme necessário)
+# Inserção de conta
+def menu_inserir_conta():
+    print(f"\n{'Inserir Nova Conta':^50}")
+    print("-" * 50)
+
+    numero = input("Número da conta: ").strip()
+
+    # Verificar se o número da conta já existe
+    if any(conta.numero == numero for conta in contas):
+        print(f"Erro: A conta {numero} já existe! Escolha outro número.")
+        return
+
+    # Exibir as agências disponíveis através da função menu_consultar_agencias
+    menu_consultar_agencias()
+
+    while True:
+        try:
+            codigo_agencia = int(input(f"\nDigite o código da agência para a conta {numero}: ").strip())
+            agencia = next((ag for ag in agencias if ag.id_agencia == codigo_agencia), None)
+
+            if agencia:
+                # Exibir os clientes disponíveis
+                menu_consultar_clientes()
+
+                while True:
+                    try:
+                        # Solicitar ID do cliente
+                        id_cliente = int(input("\nDigite o ID do cliente para associar à conta: ").strip())
+                        cliente = next((c for c in clientes if c.id_cliente == id_cliente), None)
+
+                        if cliente:
+                            break
+                        else:
+                            print("Cliente não encontrado. Tente novamente.")
+                    except ValueError:
+                        print("ID inválido! Tente novamente.")
+
+                # Confirmar se o cliente quer mesmo adicionar o cliente à agência
+                print(f"\nVocê selecionou a agência {agencia.id_agencia} - {agencia.nome}.")
+                print(f"Cliente: {cliente.nome} (ID: {cliente.id_cliente})")
+                
+                confirmacao = input("Tem certeza que deseja associar este cliente a esta agência? (s/n): ").strip().lower()
+
+                if confirmacao == 's':
+                    break
+                elif confirmacao == 'n':
+                    print("Operação cancelada. Retornando ao Menu de Contas.")
+                    return
+                else:
+                    print("Opção inválida! Digite 's' para sim ou 'n' para não.")
+            else:
+                print("Agência não encontrada. Tente novamente.")
+
+        except ValueError:
+            print("Código inválido! Digite um número.")
+
+    # Escolher o tipo de conta (Corrente ou Especial)
+    while True:
+        tipo_conta = input("\nEscolha o tipo de conta (1 - Corrente, 2 - Especial): ").strip()
+        if tipo_conta in ['1', '2']:
+            break
+        else:
+            print("Opção inválida! Digite 1 para Corrente ou 2 para Especial.")
+
+    # Solicitar saldo inicial
+    while True:
+        try:
+            saldo_inicial = float(input("Saldo inicial da conta: R$ ").strip())
+            if saldo_inicial >= 0:
+                break
+            else:
+                print("O saldo inicial não pode ser negativo! Tente novamente.")
+        except ValueError:
+            print("Valor inválido para o saldo! Tente novamente.")
+
+    # Gerar a conta de acordo com o tipo selecionado
+    if tipo_conta == '1':  # Conta Corrente
+        conta = ContaCorrente(numero, cliente, agencia, saldo_inicial)
+    else:  # Conta Especial
+        conta = ContaEspecial(numero, cliente, agencia, saldo_inicial)
+
+    # Adicionar a conta à lista de contas
+    contas.append(conta)
+
+    # Salvar dados da conta no arquivo
+    try:
+        salvar_dados("contas.txt", [conta], sobrescrever=False)  # Passando apenas a conta criada
+        print(f"Conta {numero} cadastrada com sucesso!")
+    except Exception as e:
+        print(f"Erro ao cadastrar conta: {e}")
+
+    input("\nPressione Enter para continuar...")
+
+# Consultar saldo
+def menu_consultar_saldo():
+    print(f"\n{'Consultar Saldo':^50}")
+    print("-" * 50)
+
+    # Exibir as contas disponíveis
+    if not contas:
+        print("Não há contas cadastradas no sistema.")
+        input("\nPressione Enter para continuar...")
+        return
+
+    print("Contas cadastradas:")
+    for conta in contas:
+        print(f"Conta: {conta.numero} - Titular: {conta.cliente.nome}")
+
+    # Solicitar a conta para consulta de saldo
+    while True:
+        numero_conta = input("\nDigite o número da conta para consultar o saldo: ").strip()
+        conta = next((conta for conta in contas if conta.numero == numero_conta), None)
+
+        if conta:
+            # Exibir o saldo da conta
+            print(f"\nSaldo da conta {conta.numero}: R$ {conta.saldo:.2f}")
+            break
+        else:
+            print("Conta não encontrada. Tente novamente.")
+
+    input("\nPressione Enter para continuar...")
+
+# Consultar Extrato
+def menu_consultar_extrato():
+    print(f"\n{'Consultar Extrato':^50}")
+    print("-" * 50)
+
+    # Exibir as contas disponíveis
+    if not contas:
+        print("Não há contas cadastradas no sistema.")
+        input("\nPressione Enter para continuar...")
+        return
+
+    print("Contas cadastradas:")
+    for conta in contas:
+        print(f"Conta: {conta.numero} - Titular: {conta.cliente.nome}")
+
+    # Solicitar a conta para consulta de extrato
+    while True:
+        numero_conta = input("\nDigite o número da conta para consultar o extrato: ").strip()
+        conta = next((conta for conta in contas if conta.numero == numero_conta), None)
+
+        if conta:
+            # Exibir o extrato da conta
+            print(f"\nExtrato da conta {conta.numero}:")
+            print("-" * 50)
+
+            if not conta.movimentos:
+                print("Não há movimentações nesta conta.")
+            else:
+                for movimento in conta.movimentos:
+                    print(f"{movimento.data} - {movimento.tipo} - R$ {movimento.valor:.2f}")
+
+            break
+        else:
+            print("Conta não encontrada. Tente novamente.")
+
+    input("\nPressione Enter para continuar...")
+
 
 # Menu de Movimentações (Entradas, Saídas, Saldos)
 def menu_movimentos():
@@ -556,6 +726,3 @@ def menu_movimentos():
             break
         else:
             print("Opção inválida! Tente novamente.")
-
-# Salvar e carregar dados das listas de clientes e agências
-# Isso deve ser feito para garantir persistência entre as execuções
