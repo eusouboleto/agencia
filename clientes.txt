@@ -1,5 +1,1 @@
-id_cliente: 2 | nome: Sandra Ramalho | cpf: 123.555.999-21 | telefone: (15) 99791-9292 | endereco: Rua UNIP, 1 | data_nascimento: 02/02/2002
-id_cliente: 4 | nome: Jessica Silva | cpf: 123.123.123-31 | telefone: (15) 99742-1212 | endereco: Rua Endereçando, 332 | data_nascimento: 01/02/2000
-id_cliente: 6 | nome: Matheus do Carmo Poiato | cpf: 444.444.444-17 | telefone: (11) 3232-1717 | endereco: Rua Poaites, 32 | data_nascimento: 01/01/2001
-id_cliente: 7 | nome: Maria Aparecida Flores | cpf: 123.123.123-12 | telefone: (15) 99712-1212 | endereco: Rua Aparecida, 123 | data_nascimento: 01/02/2002
-id_cliente: 8 | nome: José Carvalho | cpf: 123.123.123-31 | telefone: (15) 99798-9191 | endereco: Rua Francisco Silva, 32 | data_nascimento: 01/02/2003
+id_cliente: 1 | nome: Ricardo Eletro | cpf: 123.456.789-31 | telefone: (15) 1515-1414 | endereco: Rua Quatorze Quinze, 1415 | data_nascimento: 01/01/2000

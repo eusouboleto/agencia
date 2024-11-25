@@ -631,7 +631,7 @@ def menu_inserir_conta():
 
     # Salvar dados da conta no arquivo
     try:
-        salvar_dados("contas.txt", [conta], sobrescrever=False)  # Passando apenas a conta criada
+        salvar_dados("contas.txt", contas, sobrescrever=False)  # Passando apenas a conta criada
         print(f"Conta {numero} cadastrada com sucesso!")
     except Exception as e:
         print(f"Erro ao cadastrar conta: {e}")
