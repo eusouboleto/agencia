@@ -52,29 +52,91 @@ class Conta:
         except (ValueError, TypeError) as e:
             print(f"Erro ao converter dados da conta: {e}")
             return None
+ 
+    # @staticmethod
+    # def from_string(data):
+    #     try:
+    #         # Dividindo a string de dados em partes
+    #         parts = data.split(" | ")
+
+    #         tipo = parts[0].split(":")[1].strip()  # Tipo da conta
+    #         numero = parts[1].split(":")[1].strip()  # Número da conta (tratado como string)
+
+    #         # Buscando os dados do cliente e agencia corretamente
+    #         cliente_str = None
+    #         agencia_str = None
+    #         for part in parts:
+    #             if "cliente:" in part:
+    #                 cliente_str = part.split(":")[1].strip()  # Extrai a parte após "cliente:"
+    #             elif "agencia:" in part:
+    #                 agencia_str = part.split(":")[1].strip()  # Extrai a parte após "agencia:"
+
+    #         if not cliente_str or not agencia_str:
+    #             print(f"Erro: Dados de cliente ou agência não encontrados.")
+    #             return None
+
+    #         # Extraindo o saldo corretamente
+    #         saldo_str = None
+    #         for part in parts:
+    #             if "saldo:" in part:
+    #                 saldo_str = part.split(":")[1].strip()
+    #                 break
+
+    #         if saldo_str is None:
+    #             print(f"Erro: não foi possível encontrar o saldo na string.")
+    #             return None
+
+    #         print(f"Saldo extraído: '{saldo_str}'")  # Para verificar o valor extraído
+
+    #         try:
+    #             saldo = float(saldo_str)  # Tentando converter o saldo para float
+    #         except ValueError:
+    #             print(f"Erro ao converter saldo para float: '{saldo_str}'")
+    #             return None
+
+    #         # Ajustando a extração correta do id_cliente e id_agencia
+    #         # Agora extraímos corretamente o id do cliente e da agência
+    #         cliente_data = "id_cliente:" + cliente_str  # Exemplo: "id_cliente: 2"
+    #         agencia_data = "id_agencia:" + agencia_str  # Exemplo: "id_agencia: 1"
+
+    #         cliente = Cliente.from_string(cliente_data)  # Passando os dados corretos para Cliente
+    #         agencia = Agencia.from_string(agencia_data)  # Passando os dados corretos para Agencia
+
+    #         if tipo == "ContaCorrente":
+    #             return ContaCorrente(numero, cliente, agencia, saldo)
+    #         elif tipo == "ContaEspecial":
+    #             return ContaEspecial(numero, cliente, agencia, saldo)
+    #         else:
+    #             return Conta(numero, cliente, agencia, saldo)
+
+    #     except Exception as e:
+    #         print(f"Erro ao processar a string da conta: {e}")
+    #         return None
 
     @staticmethod
     def from_string(data):
         try:
+            # Dividindo a string de dados em partes
             parts = data.split(" | ")
-            tipo = parts[0].split(":")[1].strip()  # Identifica o tipo de conta
-            numero = int(parts[1].split(":")[1].strip())
-            cliente_str = parts[2].split(":")[1].strip()
-            agencia_str = parts[3].split(":")[1].strip()
-            saldo = float(parts[4].split(":")[1].strip())
-
+            
+            # Extraindo os dados corretamente
+            tipo = parts[0].split(":")[1].strip()
+            numero = parts[1].split(":")[1].strip()
+            
+            # Identificando os dados de cliente e agência
+            cliente_str = next(part for part in parts if "cliente:" in part)
+            agencia_str = next(part for part in parts if "agencia:" in part)
+            
+            # Convertendo para objetos
             cliente = Cliente.from_string(cliente_str)
             agencia = Agencia.from_string(agencia_str)
-
-            if tipo == "ContaCorrente":
-                return ContaCorrente(numero, cliente, agencia, saldo)
-            elif tipo == "ContaEspecial":
-                return ContaEspecial(numero, cliente, agencia, saldo)
-            else:
-                return Conta(numero, cliente, agencia, saldo)
-
+            
+            # Extraindo o saldo
+            saldo = float(next(part.split(":")[1].strip() for part in parts if "saldo:" in part))
+            
+            return Conta(numero, cliente, agencia, saldo)
         except Exception as e:
-            print(f"Erro ao processar a string da conta: {e}")
+            print(f"Erro ao processar os dados da conta: {e}")
             return None
 
 

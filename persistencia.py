@@ -31,6 +31,8 @@ def carregar_dados(nome_arquivo, tipo_item):
                             item = Conta.from_string(linha)  # Caso seja uma conta genérica
                     elif tipo_item == Movimento:
                         item = Movimento.from_string(linha)
+                    elif tipo_item == Conta:  # Adicionar verificação explícita para Conta
+                        item = Conta.from_string(linha)
                     else:
                         print(f"Tipo desconhecido: {tipo_item}")
                         continue

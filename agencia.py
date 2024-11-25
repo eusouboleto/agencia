@@ -54,10 +54,35 @@ class Agencia:
             print(f"Erro ao processar dados de agência: {e}")
             return None
 
+    # @staticmethod
+    # def from_string(data):
+    #     # Método para reconstruir uma agência a partir de uma string (para carregar do .txt)
+    #     return Agencia.from_dict(data)
+
     @staticmethod
     def from_string(data):
-        # Método para reconstruir uma agência a partir de uma string (para carregar do .txt)
-        return Agencia.from_dict(data)
+        try:
+            if " | " in data:
+                dados = data.split(" | ")
+                if len(dados) != 5:  # A agência tem 5 campos
+                    print("Formato inválido, dados incompletos:", data)
+                    return None
+
+                # Extração dos dados corretamente
+                id_agencia = int(dados[0].split(":")[1].strip())
+                nome = dados[1].split(":")[1].strip()
+                endereco = dados[2].split(":")[1].strip()
+                cnpj = dados[3].split(":")[1].strip()
+                telefone = dados[4].split(":")[1].strip()
+
+                return Agencia(id_agencia, nome, endereco, cnpj, telefone)
+            else:
+                print("Formato inválido para dados de agência:", data)
+                return None
+        except Exception as e:
+            print(f"Erro ao processar dados de agência: {e}")
+            return None
+
 
     def __str__(self):
         # Implementando o método __str__ para retornar uma string legível
